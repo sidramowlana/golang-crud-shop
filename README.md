@@ -7,7 +7,7 @@ GoLang version 1.23.0
 # Installation
 No external dependencies are required for this project.
 
-#Project Structure
+# Project Structure
 The project structure is as follows:
 
 main.go
@@ -20,12 +20,12 @@ main.go
 # Endpoints
 The following endpoints are available:
 
-GET /: Home page
-GET /all-products: Get all products
-GET /product/{id}: Get a product by ID
-POST /create-product: Create a new product
-PUT /update-product/{id}: Update a product by ID
-DELETE /delete-product/{id}: Delete a product by ID
+1. GET /: Home page
+2. GET /all-products: Get all products
+3. GET /product/{id}: Get a product by ID
+4. POST /create-product: Create a new product
+5. PUT /update-product/{id}: Update a product by ID
+6. DELETE /delete-product/{id}: Delete a product by ID
 
 # Usage
 Run the application using go run main.go
