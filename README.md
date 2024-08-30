@@ -3,19 +3,24 @@ This is a basic example of CRUD (Create, Read, Update, Delete) operations in GoL
 
 # Prerequisites
 GoLang version 1.23.0
+* Hystrix-go library (install using `go get github.com/afex/hystrix-go/hystrix`)
+
 
 # Installation
-No external dependencies are required for this project.
+To install the Hystrix-go library, run the following command:
+```bash
+go get github.com/afex/hystrix-go/hystrix
+```
 
 # Project Structure
 The project structure is as follows:
 
-main.go
-models
-product.go
-go.mod
-go.sum
-main.go
+* main.go
+* models
+* product.go
+* go.mod
+* go.sum
+* main.go
 
 # Endpoints
 The following endpoints are available:
@@ -26,6 +31,17 @@ The following endpoints are available:
 4. POST /create-product: Create a new product
 5. PUT /update-product/{id}: Update a product by ID
 6. DELETE /delete-product/{id}: Delete a product by ID
+
+# Hystrix Configuration
+This application uses Hystrix for circuit breaking. The Hystrix configuration is as follows:
+
+* Command name: command_name
+* Timeout: 1000ms
+* Max concurrent requests: 10
+* Error percentage threshold: 50%
+
+
+Hystrix is used to wrap each endpoint handler function using the HystrixHandler function. This function returns a new handler function that wraps the original handler function with Hystrix circuit breaking logic.
 
 # Usage
 Run the application using go run main.go
