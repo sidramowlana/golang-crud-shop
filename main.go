@@ -17,6 +17,16 @@ func getAllProducts(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Get all products end point called")
 	json.NewEncoder(w).Encode(m.ProductsList)
 }
+
+func getProductByID(id int) (*m.Product, int) {
+	for i, product := range m.ProductsList {
+		if product.ID == id {
+			return &m.ProductsList[i], i
+		}
+	}
+	return nil, -1
+}
+
 func getAProductById(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Get A product By its Id end point called")
 
@@ -30,20 +40,21 @@ func getAProductById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// if available send the product details
-	for _, product := range m.ProductsList {
-		if product.ID == id {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(product)
-			return
-		}
+	product, _ := getProductByID(id)
+	if product == nil {
+		http.Error(w, "Product ID cannot be found", http.StatusNotFound)
+		return
 	}
-	http.Error(w, "Product ID cannot be found", http.StatusNotFound)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(product)
+
 }
 
 func createProduct(w http.ResponseWriter, r *http.Request) {
 	// Make sure if the end point method is post
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid reuqest method", http.StatusMethodNotAllowed)
+		return
 	}
 
 	// if it is a post method u have to decode the body to product struct
@@ -54,6 +65,7 @@ func createProduct(w http.ResponseWriter, r *http.Request) {
 	//Check if the body is valid
 	if err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
 	}
 
 	// if it is valid -> create a new id
@@ -66,8 +78,50 @@ func createProduct(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 
 	json.NewEncoder(w).Encode(newProduct)
-
 }
+
+func updateAProductbyId(w http.ResponseWriter, r *http.Request) {
+	// make sure the request is put
+	if r.Method != http.MethodPut {
+		http.Error(w, "Invalid request paylod", http.StatusMethodNotAllowed)
+		return
+	}
+
+	idStr := strings.TrimPrefix(r.URL.Path, "/update-product/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid request paylod", http.StatusMethodNotAllowed)
+		return
+	}
+	//search for the product id and get the product details -> call the getProductById
+	product, index := getProductByID(id)
+	if product == nil {
+		http.Error(w, "Product not found", http.StatusNotFound)
+		return
+	}
+
+	//decode the body into product struct
+	var updateProduct m.Product
+
+	//Check if the body is valid
+	err = json.NewDecoder(r.Body).Decode(&updateProduct)
+	if err != nil {
+		http.Error(w, "Invalid request paylod", http.StatusMethodNotAllowed)
+		return
+	}
+
+	//update the product details
+	m.ProductsList[index].Name = updateProduct.Name
+	m.ProductsList[index].Description = updateProduct.Description
+	m.ProductsList[index].Price = updateProduct.Price
+	m.ProductsList[index].Quantity = updateProduct.Quantity
+
+	// Return the updated product
+	w.Header().Set("Content-Type", "application/json")
+
+	json.NewEncoder(w).Encode(m.ProductsList[index])
+}
+
 func getNextProductID() int {
 	if len(m.ProductsList) == 0 {
 		return 1
@@ -75,6 +129,7 @@ func getNextProductID() int {
 	lastProduct := m.ProductsList[len(m.ProductsList)-1]
 	return lastProduct.ID + 1
 }
+
 func deleteAProductbyId(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Delete a product by ID end point called")
 	idStr := strings.TrimPrefix(r.URL.Path, "/delete-product/")
@@ -104,8 +159,6 @@ func deleteAProductbyId(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": "Product deleted successfully"})
 }
-
-func updateAProductbyId(w http.ResponseWriter, r *http.Request) {}
 
 // get all the request end points here
 func handleRequests() {
