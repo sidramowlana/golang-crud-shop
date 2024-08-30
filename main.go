@@ -7,7 +7,24 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/afex/hystrix-go/hystrix"
 )
+
+// The idea is to execute some extra steps before or after calling the original handler,
+// or even replace the original handler's behavior in case of specific conditions
+func HystrixHandler(handlerFunc http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		hystrix.Do("command_name", func() error {
+			handlerFunc(w, r) //calling the original handler
+			return nil
+		},
+			func(err error) error {
+				http.Error(w, "Service is unavailable", http.StatusServiceUnavailable)
+				return nil
+			})
+	}
+}
 
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "End point to the Home Page")
@@ -162,12 +179,12 @@ func deleteAProductbyId(w http.ResponseWriter, r *http.Request) {
 
 // get all the request end points here
 func handleRequests() {
-	http.HandleFunc("/", homePage)
-	http.HandleFunc("/all-products", getAllProducts)
-	http.HandleFunc("/product/", getAProductById)
-	http.HandleFunc("/create-product", createProduct)
-	http.HandleFunc("/delete-product/", deleteAProductbyId)
-	http.HandleFunc("/update-product/", updateAProductbyId)
+	http.HandleFunc("/", HystrixHandler(homePage))
+	http.HandleFunc("/all-products", HystrixHandler(getAllProducts))
+	http.HandleFunc("/product/", HystrixHandler(getAProductById))
+	http.HandleFunc("/create-product", HystrixHandler(createProduct))
+	http.HandleFunc("/delete-product/", HystrixHandler(deleteAProductbyId))
+	http.HandleFunc("/update-product/", HystrixHandler(updateAProductbyId))
 	http.ListenAndServe(":8081", nil)
 }
 
